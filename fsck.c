@@ -179,10 +179,7 @@ struct dinode* getI(ushort inum){ //get (pointer to) dinode given inode number
 //walk through fs tree recursively
 int walk(ushort current, ushort parent) //pass in previous inode
 {
-  if(loop > 10)
-    {printf("************loop:%d\n", loop);
-	return 0;
-    }
+ 
   loop++;
   struct dinode *tempI, *parentI, *currentI;
   uint dotC, dotdotC; //counts for dot and dot dot dir entries
@@ -228,28 +225,7 @@ int walk(ushort current, ushort parent) //pass in previous inode
 	      printf("tempDe->name:%s \t nlink:%d type:%d size:%d \n", tempDe->name, temp->nlink, temp->type, temp->size);
 	    }
 	}  
-    } ///////////////////   for(iC=0; currentI->addrs[iC] != 0; iC++) 
-  //indirect blocks
-  /* uint iA, indOff;
-  uint *indAddr; //indirect blk beginning
-  indOff = currentI->addrs[NDIRECT]; //offset of start of INdirect block
-  indAddr = (uint*)(fsptr + BSIZE*(indOff)); //INdirct blk beginning
-  while( *(indAddr) != 0 ) //could skip!
-    { //printf("currentI->addrs[iA]: %d\n", (int)currentI->addrs[iA]);
-      //walk through directory entries in INdirect block    
-      for(tempDe = blockAddr; tempDe->inum != 0; tempDe++)
-      	{
-	  if(tempDe->name != NULL)       
-	    {
-	      nl[tempDe->inum]++;
-	      printf("tempDe->inum:%d\t", tempDe->inum);
-	      printf("tempDe->name:%s\n", tempDe->name);
-	    }
-	}
-      indAddr = (char*)indAddr + sizeof(uint); //next uint entry in indir block
-      } */
-
-  //////////////
+    } 
   if(dotC == 0) 
     {//need to move overwritten dirents to l+f!
       struct dirent *self = (struct dirent*)(fsptr + BSIZE*(currentI->addrs[0]));
@@ -312,24 +288,8 @@ int walk(ushort current, ushort parent) //pass in previous inode
 	  if((char*)tempDe > (char*)initial + 31*sizeof(struct dirent))
 	    break; //a block holds 32 dirent's
 	}
-      //%%
+      
     }
-    //Indirect pointers
-    /* int iX;
-    for(iX=NDIRECT; currentI->addrs[iS] != 0; iS++)
-    {
-      ///%%
-      tempDe = (struct dirent*)(fsptr + BSIZE*(currentI->addrs[addrR]));  
-      while( tempDe->inum != 0)
-	{ 
-	  tempI = getI(tempDe->inum);
-	  int ty = tempI->type;
-	  if(ty == 1)
-	    walk(tempDe->inum, current);
-	  tempDe = (struct dirent*)((char*)tempDe+sizeof(struct dirent));
-	}
-    } */
-
   return 0;
 }
 
@@ -348,21 +308,9 @@ void setBit(ushort inum)
     { //write 1 to bitmap
       blockNumber = (uint)(in->addrs[i]);
       //set #blockNumber bit in bitmap to 1
-      
-      //      if( (*(char*)(fsptr+bitBlock*BSIZE+ blockNumber/8) ^ 1<<(8-blockNumber%8)) != 0 ) //if different; not single bits
-      //	printf("Bit flipped! original:%c update:%c \n", *(char*)(fsptr+bitBlock*BSIZE+ blockNumber/8), 1<<(blockNumber%8) );
-
       *(char*)(fsptr+bitBlock*BSIZE+ blockNumber/8)= *(char*)(fsptr+bitBlock*BSIZE+ blockNumber/8) | 1<<(blockNumber%8);
-      //8 bits/byte, 8 bits/char
-      
-      /*
-      *(uint*)temp = *(uint*)((uint)bitStart+ blockNumber/(sizeof(uint)));
-      //shift this uint by the modulus and set bit to 1
-      *(uint*)temp = (*(uint*)temp<<(blockNumber%sizeof(uint))) | 1<<(sizeof(uint)-1); ////////////
-      *(uint*)((uint)bitStart+ blockNumber/(sizeof(uint))) = (*(uint*)temp>>(blockNumber%sizeof(uint))) | *(uint*)((uint)bitStart+ blockNumber/(sizeof(uint))); //shift back and write back to mem	      */
-      // }
     }
-  //  free(temp);
+  
 }
 //clear out inode, zero out dirents
 void clear(ushort inum)
@@ -393,7 +341,7 @@ void findRoot(){ //find root inode
 	  struct dirent *de;
 	  //search through dir entries in each block
 	  for(de = (struct dirent*)blockAddr; de->name != NULL; de++)
-	    {if(*(de->name) == 'r') /////////////root doesn't have name!
+	    {if(*(de->name) == 'r') 
 		{rootFound = 1;
 		  root = tempI;
 		  printf("root name:%s \n", de->name);
